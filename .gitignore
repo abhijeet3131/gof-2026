@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.netlify/
+.env
+.env.*
+!.env.example
+*.log
+~$*.xlsx
+
+# Design source files (187 MB) - copy only the web-ready files the app needs into public/
+GOF Assets visual/
+
+# Cloudflare local secrets
+.dev.vars
+.wrangler/

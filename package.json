@@ -1,0 +1,29 @@
+{
+  "name": "gof-2026",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "cf:dev": "vite build && wrangler pages dev --port 8788",
+    "cf:deploy": "vite build && wrangler pages deploy",
+    "workbook": "node workbook/build.mjs",
+    "workbook:test": "node workbook/test.mjs",
+    "demo-data": "node workbook/make-demo.mjs",
+    "test": "node workbook/test.mjs && vitest run"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "exceljs": "^4.4.0",
+    "hyperformula": "^2.7.1",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8",
+    "wrangler": "^4.150.0"
+  }
+}

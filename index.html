@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1c1a1b" />
+    <meta name="description" content="Hostel Wars: live House Cup standings, schedule, results and brackets for Goblet of Fire 2026." />
+    <title>Goblet of Fire 2026</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preload" href="/fonts/CollegiateBlackFLF.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="/fonts/CollegiateOutlineFLF.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="/brand/gof-logo-white.svg" as="image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet" />
+    <!-- Opening screen styles are inline so it paints before the app bundle loads. -->
+    <style>
+      @font-face { font-family: 'Collegiate Outline'; src: url('/fonts/CollegiateOutlineFLF.ttf') format('truetype'); font-display: swap; }
+      html, body { background: #1c1a1b; }
+      #splash {
+        position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 14px; padding: 24px; background: #1c1a1b; color: #f6f3ee; overflow: hidden; cursor: pointer;
+        transition: opacity 0.6s ease, transform 0.6s ease, visibility 0s linear 0.6s;
+      }
+      #splash.is-out { opacity: 0; transform: scale(1.04); visibility: hidden; pointer-events: none; }
+      #splash::before {
+        content: ''; position: absolute; inset: -10%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.09) 1.3px, transparent 1.7px) 0 0 / 11px 11px;
+        -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 42%, #000 0%, transparent 72%);
+        mask-image: radial-gradient(ellipse 60% 50% at 50% 42%, #000 0%, transparent 72%);
+      }
+      .sp-glow {
+        position: absolute; width: 70vmin; height: 70vmin; left: 50%; top: 38%; transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(255, 140, 40, 0.28) 0%, rgba(168, 212, 59, 0.10) 40%, transparent 70%);
+        animation: sp-flicker 1.6s ease-in-out infinite alternate;
+      }
+      .sp-logo { position: relative; width: min(64vw, 300px); height: auto; filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6)); animation: sp-rise 0.8s cubic-bezier(.2, .8, .2, 1) both; }
+      .sp-tag { position: relative; font-family: 'Permanent Marker', cursive; color: #a8d43b; font-size: clamp(26px, 8vw, 40px); line-height: 1; transform: rotate(-4deg); animation: sp-slide 0.6s 0.35s cubic-bezier(.2, .8, .2, 1) both; }
+      .sp-year { position: relative; font-family: 'Collegiate Outline', Impact, sans-serif; font-size: clamp(30px, 9vw, 48px); letter-spacing: 0.12em; line-height: 1; animation: sp-fade 0.6s 0.55s both; }
+      .sp-houses { position: relative; display: flex; gap: 10px; margin-top: 6px; }
+      .sp-houses span {
+        width: 46px; height: 62px; display: grid; place-items: start center; padding-top: 8px; background: var(--c);
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); transform-origin: top;
+        animation: sp-unfurl 0.5s cubic-bezier(.2, .8, .2, 1) both;
+      }
+      .sp-houses span:nth-child(1) { animation-delay: 0.7s; }
+      .sp-houses span:nth-child(2) { animation-delay: 0.82s; }
+      .sp-houses span:nth-child(3) { animation-delay: 0.94s; }
+      .sp-houses span:nth-child(4) { animation-delay: 1.06s; }
+      .sp-houses img { width: 30px; height: 30px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5)); }
+      .sp-bar { position: relative; width: min(50vw, 200px); height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); overflow: hidden; margin-top: 10px; }
+      .sp-bar i { position: absolute; inset: 0; background: #a8d43b; transform-origin: left; animation: sp-load 1.8s ease-in-out both; }
+      @keyframes sp-rise { from { opacity: 0; transform: translateY(18px) scale(0.92); } to { opacity: 1; transform: none; } }
+      @keyframes sp-slide { from { opacity: 0; transform: translateX(-24px) rotate(-4deg); } to { opacity: 1; transform: rotate(-4deg); } }
+      @keyframes sp-fade { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes sp-unfurl { from { opacity: 0; transform: scaleY(0); } to { opacity: 1; transform: scaleY(1); } }
+      @keyframes sp-load { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+      @keyframes sp-flicker { from { opacity: 0.75; transform: translate(-50%, -50%) scale(0.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.04); } }
+      @media (prefers-reduced-motion: reduce) { #splash *, #splash { animation: none !important; transition-duration: 0.2s; } }
+    </style>
+  </head>
+  <body>
+    <div id="splash" aria-hidden="true">
+      <div class="sp-glow"></div>
+      <img class="sp-logo" src="/brand/gof-logo-white.svg" alt="" width="416" height="315" />
+      <div class="sp-tag">Hostel Wars</div>
+      <div class="sp-year">2026</div>
+      <div class="sp-houses">
+        <span style="--c:#C8232B"><img src="/brand/lion.svg" alt="" /></span>
+        <span style="--c:#E3B32D"><img src="/brand/badger.svg" alt="" /></span>
+        <span style="--c:#1168BA"><img src="/brand/eagle.svg" alt="" /></span>
+        <span style="--c:#23824A"><img src="/brand/snake.svg" alt="" /></span>
+      </div>
+      <div class="sp-bar"><i></i></div>
+    </div>
+    <script>
+      // Tap to skip; safety net in case the app never signals it is ready.
+      (function () {
+        var s = document.getElementById('splash');
+        function out() { if (s) s.classList.add('is-out'); }
+        s.addEventListener('click', out);
+        setTimeout(out, 6000);
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

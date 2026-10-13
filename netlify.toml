@@ -1,0 +1,13 @@
+# Optional: Netlify deployment. The main host is Cloudflare Pages (see docs/DEPLOYMENT.md).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Caching headers live in public/_headers (shared with Cloudflare Pages).
