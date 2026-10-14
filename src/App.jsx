@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { derive, liveMatches } from './lib/derive.js';
+import { derive, liveMatches, orderSemis } from './lib/derive.js';
 import { fmtAgo } from './lib/time.js';
 import { href, useNow, useRoute, useTournament } from './hooks.js';
 import Home from './pages/Home.jsx';
@@ -16,7 +16,8 @@ const NAV = [
 ];
 
 export default function App() {
-  const { data, checkedAt, error, refreshing, refresh } = useTournament();
+  const { data: raw, checkedAt, error, refreshing, refresh } = useTournament();
+  const data = useMemo(() => orderSemis(raw), [raw]);
   const now = useNow(10000);
   const [page = '', param] = useRoute();
   const ctx = useMemo(() => derive(data), [data]);
@@ -54,7 +55,7 @@ export default function App() {
         {data && (
           <button className={`sync ${error ? 'is-error' : ''}`} onClick={refresh} title="Refresh now">
             <span className={`sync__dot ${refreshing ? 'is-spinning' : ''}`} />
-            {error ? 'Offline' : checkedAt ? `Updated ${fmtAgo(new Date(checkedAt).toISOString(), Date.now())}` : 'Updating…'}
+            <span className="sync__label">{error ? 'Offline' : checkedAt ? `Updated ${fmtAgo(new Date(checkedAt).toISOString(), Date.now())}` : 'Updating…'}</span>
           </button>
         )}
       </header>

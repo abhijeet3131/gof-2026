@@ -144,7 +144,7 @@ export default function Home({ data, ctx, now }) {
 
   return (
     <>
-      <Section title="House Cup">
+      <Section title="Current Standings">
         <ol className="pennants">
           {data.standings.map((s) => (
             <Pennant key={s.house} s={s} ctx={ctx} tied={rankCount[s.rank] > 1}
