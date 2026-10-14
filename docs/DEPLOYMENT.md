@@ -111,9 +111,29 @@ To change the variables later: **your project → Settings → Variables and Sec
 4. Optional: on the phone's browser, use **Add to Home Screen** and the app opens like an installed app.
 5. Share the link, or a QR code of it, with the hostel.
 
+## Part F — Turn on schedule auto-sync (10 min, once)
+
+This lets SCAM change the timetable by moving cells in the SCHEDULE grid (see the SCAM guide).
+
+1. **Add the grid to the GOF sheet** (skip this if you uploaded the latest workbook, which already has a SCHEDULE tab):
+   - Open the Google Sheet where you keep the schedule grid.
+   - Right-click its tab → **Copy to → Existing spreadsheet** → pick the GOF sheet.
+   - In the GOF sheet, rename the copied tab to exactly `SCHEDULE`.
+2. **Before turning anything on, tell me.** I'll read the new tab and confirm every cell is understood.
+3. In the GOF sheet: **Extensions → Apps Script**. Delete the sample code, paste the whole of `apps-script/ScheduleSync.gs` from this project, and click **Save** (💾).
+4. Close the script tab and **reload the sheet**. A **GOF** menu appears next to Help.
+5. Click **GOF → Turn on auto-sync**.
+   - Google asks you to authorise the script. Choose your account.
+   - If you see "Google hasn't verified this app", click **Advanced → Go to … (unsafe)**. It's your own script, running only on this sheet.
+   - Click **Allow**.
+6. It syncs straight away. Check the message in the bottom-right corner, then open the **SYNC_LOG** tab. It lists what moved and any cells it couldn't understand.
+
+Only the sheet owner needs to do this. Other SCAM editors just edit the grid, and the sync runs under the owner's permission.
+
 ## Updating later
 
-- **Results, schedule, DON, adjustments:** edit the Google Sheet only. No redeploy is needed.
+- **Results, DON, adjustments:** edit the Google Sheet only. No redeploy is needed.
+- **Schedule:** move cells in the SCHEDULE grid. The auto-sync updates MATCHES, then the app.
 - **Code changes:** push to GitHub, and Cloudflare redeploys automatically in about a minute.
 - **How fresh the app is:** usually within 30–60 seconds of an edit.
   - Cloudflare keeps a copy for 20 seconds.

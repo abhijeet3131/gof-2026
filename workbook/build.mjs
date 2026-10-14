@@ -7,7 +7,8 @@
 import ExcelJS from 'exceljs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { HOUSES, EVENTS, WEASLEY, SCHEDULE } from './data.mjs';
+import { HOUSES, EVENTS, WEASLEY, FIXTURES, GRID } from './data.mjs';
+import { loadSyncCore, gridModel } from './sync-core.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const OUT = process.argv[2] || path.join(here, '..', 'GOF_2026_Workbook.xlsx');
@@ -105,6 +106,36 @@ const timeSerial = (hhmm) => {
 
 const houseByCode = Object.fromEntries(HOUSES.map((h) => [h.code, h.name]));
 
+// ---- Schedule: every fixture gets a MATCHES row; dates/times come from the SCHEDULE grid,
+// using the same code as the Google Sheets auto-sync (apps-script/ScheduleSync.gs).
+const syncCore = loadSyncCore();
+const grid = gridModel(GRID);
+const eventList = EVENTS.map((e) => ({ name: e[0], format: e[3] }));
+const SCHEDULE_ROWS = [];
+for (const [name, , , format] of EVENTS) {
+  if (format === 'Knockout') {
+    FIXTURES[name].forEach(([a, b], i) => SCHEDULE_ROWS.push({ event: name, stage: `Semi ${i + 1}`, team1: houseByCode[a], team2: houseByCode[b] }));
+    SCHEDULE_ROWS.push({ event: name, stage: 'Final', team1: '', team2: '' });
+  } else {
+    SCHEDULE_ROWS.push({ event: name, stage: 'Single round', team1: '', team2: '' });
+  }
+}
+SCHEDULE_ROWS.forEach((x, i) => Object.assign(x, {
+  row: M_FIRST + i, id: `M${String(i + 1).padStart(2, '0')}`, date: '', start: '', end: '', type: 'Sport', title: '', status: 'Scheduled',
+}));
+{
+  const layout = syncCore.gofFindLayout(grid.display);
+  const read = syncCore.gofReadGrid(grid.display, grid.isoDates, grid.merges, layout, eventList, HOUSES, syncCore.GOF.ALIASES);
+  const plan = syncCore.gofPlanSync(read.slots, SCHEDULE_ROWS, eventList);
+  const problems = read.problems.concat(plan.problems);
+  if (problems.length) throw new Error(`SCHEDULE grid problems:\n${problems.join('\n')}`);
+  for (const u of plan.updates) Object.assign(SCHEDULE_ROWS.find((x) => x.row === u.row), { date: u.date, start: u.start, end: u.end });
+  plan.eventsToWrite.forEach((e, i) => SCHEDULE_ROWS.push({
+    row: M_FIRST + SCHEDULE_ROWS.length, id: `E${String(i + 1).padStart(2, '0')}`, type: 'Event', event: '', stage: '', team1: '', team2: '',
+    title: e.title, date: e.date, start: e.start, end: e.end, status: 'Scheduled',
+  }));
+}
+
 // ---- Workbook ---------------------------------------------------------------------
 const wb = new ExcelJS.Workbook();
 wb.creator = 'SCAM - Goblet of Fire 2026';
@@ -113,7 +144,7 @@ wb.calcProperties = { fullCalcOnLoad: true };
 
 const tabs = {};
 for (const [name, colour] of [
-  ['SETUP', 'FF6B7280'], ['MATCHES', 'FFD97706'], ['DON', 'FFD97706'], ['ADJUSTMENTS', 'FFD97706'],
+  ['SETUP', 'FF6B7280'], ['SCHEDULE', 'FF7C3AED'], ['MATCHES', 'FFD97706'], ['DON', 'FFD97706'], ['ADJUSTMENTS', 'FFD97706'],
   ['POINTS_LOG', 'FF6B7280'], ['LEADERBOARD', 'FF059669'], ['TODAY', 'FF2563EB'],
   ['BRACKETS', 'FF2563EB'], ['DASHBOARD', 'FF059669'],
 ]) {
@@ -191,11 +222,47 @@ for (const [name, colour] of [
   widths(ws, [18, 13, 10, 14, 11, 11, 12, 20, 8, 18, 3, 46, 20, 3, 12, 3, 12, 3, 8, 3, 13, 3, 8, 3, 9]);
 }
 
+// ================================ SCHEDULE ========================================
+// The visual timetable SCAM edits. Moving a cell here moves the match (Apps Script auto-sync).
+{
+  const ws = tabs.SCHEDULE;
+  const FILL = { event: 'FFF4CCCC', opening: 'FFFFF2CC', highlight: 'FFE6D9F7', header: 'FFDDEBF7', spacer: 'FFD9D9D9' };
+  const lastRow = grid.display.length;
+  const width = grid.display[0].length;
+  grid.display.forEach((row, r) => row.forEach((v, c) => {
+    if (v === '' || c === 0) return;
+    const cell = ws.getCell(r + 1, c + 1);
+    if (c === 1 && r >= 3) { cell.value = dateSerial(v); cell.numFmt = 'd-mmm'; } else cell.value = v;
+  }));
+  for (const m of grid.merges) ws.mergeCells(m.row + 1, m.col + 1, m.row + m.rows, m.col + m.cols);
+  for (let r = 1; r <= lastRow; r++) {
+    for (let c = 2; c <= width; c++) {
+      const cell = ws.getCell(r, c);
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      if (r <= 3) { cell.font = { bold: true }; if (r === 1) cell.fill = fill(FILL.header); }
+      if (r > 3 && c === grid.firstCol + 2) cell.fill = fill(FILL.spacer);
+    }
+  }
+  for (const { row, col, span, label } of grid.cells) {
+    const whole = span >= GRID.columns.length;
+    const kind = whole ? (/opening/i.test(label) ? 'opening' : 'event')
+      : /finals?|\(all\)|athletics|^litfest/i.test(label) ? (/^litfest/i.test(label) ? 'event' : 'highlight') : '';
+    const cell = ws.getCell(row + 1, col + 1);
+    if (kind) cell.fill = fill(FILL[kind]);
+    if (kind === 'highlight' || whole) cell.font = { bold: true };
+  }
+  ws.getCell(lastRow + 2, 2).value = 'To move a match: drag its cell to the new day/time (or cut and paste). Merge cells to make it longer. Write sports like "Football M (G v S)", "Volleyball W Finals", "BGMI (All)". Anything else is shown as an event.';
+  ws.getCell(lastRow + 2, 2).font = { italic: true, color: { argb: C.note } };
+  widths(ws, [2, 9, 11, 14, 4, 13, 13, 17, 17, 17, 17, 17, 17, 17, 14]);
+  ws.views = [{ state: 'frozen', xSplit: 3, ySplit: 3 }];
+}
+
 // ================================ MATCHES =========================================
 {
   const ws = tabs.MATCHES;
-  title(ws, 'MATCHES - master schedule and results (main input sheet)',
-    'Yellow = type here. Grey = automatic. Final rows: leave Team 1/Team 2 blank - they fill in from the semi-final winners. Points count only when Status is Completed or Walkover.');
+  title(ws, 'MATCHES - match list and results (enter results here)',
+    'Date/Start/End and the Event rows come automatically from the SCHEDULE tab - move matches there, not here. Yellow = type here (Status, Score, Winner...). Points count only when Status is Completed or Walkover.');
 
   const inputs = ['Match ID', 'Date', 'Start', 'End', 'Type', 'Event', 'Title', 'Stage', 'Team 1', 'Team 2',
     'Venue override', 'Status', 'Score', 'Winner / 1st', '2nd place', 'Notes'];
@@ -204,20 +271,18 @@ for (const [name, colour] of [
     'Upcoming at', 'Result at'];
   header(ws, 3, 1, [...inputs, ...calcs]);
   // A..P inputs, Q..AJ calcs
-  for (let i = 0; i < SCHEDULE.length; i++) {
-    const [date, start, end, type, ev, stage, t1, t2] = SCHEDULE[i];
-    const r = M_FIRST + i;
-    const row = ws.getRow(r);
-    row.getCell(1).value = `M${String(i + 1).padStart(2, '0')}`;
-    row.getCell(2).value = dateSerial(date);
-    if (start) row.getCell(3).value = timeSerial(start);
-    if (end) row.getCell(4).value = timeSerial(end);
-    row.getCell(5).value = type;
-    if (type === 'Sport') row.getCell(6).value = ev; else row.getCell(7).value = ev;
-    if (stage) row.getCell(8).value = stage;
-    if (t1) row.getCell(9).value = houseByCode[t1];
-    if (t2) row.getCell(10).value = houseByCode[t2];
-    row.getCell(12).value = 'Scheduled';
+  for (const x of SCHEDULE_ROWS) {
+    const row = ws.getRow(x.row);
+    row.getCell(1).value = x.id;
+    if (x.date) row.getCell(2).value = dateSerial(x.date);
+    if (x.start) row.getCell(3).value = timeSerial(x.start);
+    if (x.end) row.getCell(4).value = timeSerial(x.end);
+    row.getCell(5).value = x.type;
+    if (x.type === 'Sport') row.getCell(6).value = x.event; else row.getCell(7).value = x.title;
+    if (x.stage) row.getCell(8).value = x.stage;
+    if (x.team1) row.getCell(9).value = x.team1;
+    if (x.team2) row.getCell(10).value = x.team2;
+    row.getCell(12).value = x.status;
   }
 
   for (let r = M_FIRST; r <= M_LAST; r++) {

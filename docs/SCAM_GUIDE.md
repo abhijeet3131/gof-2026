@@ -11,8 +11,33 @@ The app reads the Google Sheet. **Whatever you type appears on students' phones 
 5. The **Check** column (MATCHES, column AG) turns **red** when something's wrong. Keep **DASHBOARD → "Data problems in MATCHES"** at **0**.
 6. Everything in **Score**, **Notes** and adjustment **Reason** is **public** in the app.
 7. Agree who is the scorer for each match, so two people don't edit the same row at once.
+8. **Dates and times live in the SCHEDULE grid**, not in MATCHES (see below).
 
 You can do all of this from the **Google Sheets mobile app**.
+
+## Changing the schedule (SCHEDULE tab)
+
+The **SCHEDULE** tab is the timetable grid. **It is the only place to change dates and times.** A small script copies every change into MATCHES automatically, usually within a minute. You'll see a "GOF schedule sync" message in the corner. The app updates about a minute after that.
+
+| To… | Do this in the SCHEDULE grid |
+|---|---|
+| Move a match | Click its cell, grab the cell's **border** and **drag** it to the new day and time. On a phone, use **Cut** then **Paste**. |
+| Make a match longer or shorter | Merge it with the next empty cell (**Format → Merge cells**), or unmerge it. |
+| Add a match | Type it in an empty cell, e.g. `Dodgeball (S v H)` |
+| Remove a match from the schedule | Delete the cell's text. The app shows it as "Not scheduled". |
+| Add a hostel event | Type its name, e.g. `Verve`, and merge across the evening. An empty merged, coloured row is shown as "To be announced". |
+
+**How to write sport cells** (the same style the grid already uses):
+- **Semi-final:** sport, then the two house letters, e.g. `Football M (G v S)`, `Volleyball W (R v H)`, `TT (G v S)`
+- **Final:** add the word `Finals`, e.g. `Basketball W Finals`
+- **All houses together:** e.g. `BGMI (All)`, `Poker (All)`, `Athletics (Relay) M`, `Athletics (Shotput) W`
+- **Anything else** becomes an event card with no score.
+
+Rules worth knowing:
+- **Times:** a cell's start time is its column. A merged cell ends where the next column starts. A cell across the whole row has no times ("All evening"). Cells in the after-midnight columns stay on the evening's row.
+- **If a cell can't be understood** (a typo, an unknown house letter, or a semi-final without its teams), nothing is guessed. The sync message says how many problems it found, and the **SYNC_LOG** tab names the cell, e.g. `H5: Unknown sport in "Pickelball (G v S)"`.
+- **Results are never touched.** Moving a match only changes its date and time. A match that already has a result keeps its date even if you delete its cell.
+- **Forcing a sync:** if the app hasn't updated after a couple of minutes, use the menu **GOF → Sync schedule now**.
 
 ## During a match (MATCHES tab)
 
@@ -24,7 +49,7 @@ Find the match row; the Date, Event and Stage columns help.
 | During play (optional) | Type the running score in **Score**, e.g. `1-0`, `Q3: G 31 - 27 H`, `S 64/3 (8 ov)`. |
 | Match ends | 1. **Score** → final score, e.g. `2-1`, `24-18`, `1-1 (4-3 pens)`. <br>2. **Winner / 1st** → the winning house. <br>3. **Status** → `Completed`. |
 | No-show (rulebook: 15 minutes late = bye) | **Winner / 1st** → the team that turned up. **Status** → `Walkover`. **Notes** → e.g. `Hufflepuff did not show up`. |
-| Delayed or rescheduled | **Status** → `Postponed`. Once the new time is known, update **Date / Start / End** and set **Status** back to `Scheduled`. |
+| Delayed or rescheduled | **Status** → `Postponed`. Once the new time is known, move the cell in the **SCHEDULE** grid and set **Status** back to `Scheduled`. |
 | Cancelled | **Status** → `Cancelled`. |
 
 ### Finals fill themselves in
@@ -40,14 +65,8 @@ You apply the rulebook's special cases when you choose the two houses:
 - **BGMI:** two different houses must get 1st and 2nd, even if one house's squads finish top two.
 - **Poker:** if the last two players standing are from the same house, 2nd place goes to the third-to-last player's house.
 
-### Times after midnight
-- Keep the **Date** as the *evening* the session belongs to, as in the printed schedule. For example, the FIFA final at 00:30 after the 15 Oct evening has Date = **15 Oct**, Start = **00:30**.
-- Anything before **05:00** counts as the previous evening. 06:00 Cricket is the morning of its own date.
-
-### Adding a new match or hostel event
-- Use any empty row below the last one; the app sorts by date and time.
-- Fill in: Match ID (unique, e.g. `M59`), Date, Start, End, Type, and either **Event + Stage + teams** (sport) or **Title** (non-sport, e.g. "Litfest").
-- For non-sport events set **Type** = `Event`. They appear in the schedule as event cards with no score.
+### Don't change Date / Start / End in MATCHES
+Those columns, and the Event rows, are filled from the SCHEDULE grid and are overwritten on every sync. Change the grid instead.
 
 ## Double or Nothing (DON tab) — on declaration day
 

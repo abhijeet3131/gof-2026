@@ -16,6 +16,11 @@
   - **4 Weasley challenges**.
 
   Going beyond these needs formula changes.
+- **Schedule auto-sync:**
+  - Changes reach the app in about 1–2 minutes in total: the sync, then the app's refresh.
+  - The grid must keep its shape: a **Date** column, one row of times (21:30, 22:00 …) and one row per day.
+  - Sport cells must follow the naming style in the SCAM guide; anything else becomes an event card.
+  - Google limits free scripts to about 90 minutes of running time a day. One sync takes about a second, so this is far beyond what a busy day needs.
 - **Time logic assumes IST.** Anything from 00:00 to 04:59 belongs to the previous evening. The cut-off can be changed in SETUP.
 - **Scores are free text.** The app doesn't model sets, frames or overs; only the **Winner** affects points.
 - **Rulebook special cases are applied by the scorer**, not by formulas: BGMI same-house squads, the Poker third-to-last rule, chess Armageddon, the cricket super over and penalty shoot-outs.

@@ -18,7 +18,9 @@ SCAM edits Google Sheet ──► Cloudflare Pages Function /api/data ──► 
 | Path | What it is |
 |---|---|
 | `GOF_2026_Workbook.xlsx` | The workbook to upload to Google Sheets (generated, pre-filled with the draft schedule) |
-| `workbook/data.mjs` | Houses, events, Weasley challenges and the draft schedule used to generate the workbook |
+| `workbook/data.mjs` | Houses, events, fixtures, Weasley challenges and the SCHEDULE grid used to generate the workbook |
+| `apps-script/ScheduleSync.gs` | Google Apps Script pasted into the sheet: syncs the SCHEDULE grid into MATCHES (see DEPLOYMENT Part F) |
+| `workbook/sync-core.mjs` | Runs the same sync logic in Node, for the workbook builder and tests |
 | `workbook/build.mjs` | Generates the workbook: tabs, formulas, dropdowns, checks |
 | `workbook/test.mjs` | 74 scoring checks run against the **real workbook formulas** |
 | `workbook/make-demo.mjs` | Builds the demo data shown when no sheet is connected |

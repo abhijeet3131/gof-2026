@@ -7,7 +7,8 @@ import { execFileSync } from 'node:child_process';
 import { loadWorkbook, serial } from './engine.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const FILE = path.join(here, '..', 'GOF_2026_Workbook.xlsx');
+// GOF_WORKBOOK lets tests build to a temp file (e.g. when the real workbook is open in Excel).
+const FILE = process.env.GOF_WORKBOOK || path.join(here, '..', 'GOF_2026_Workbook.xlsx');
 execFileSync(process.execPath, [path.join(here, 'build.mjs'), FILE], { stdio: 'ignore' });
 
 const NOW = serial('2026-10-15', '23:00');
@@ -193,16 +194,20 @@ await test('adjustments feed the leaderboard', async () => {
 await test('TODAY: post-midnight matches stay on the same night; 06:00 is that morning', async () => {
   const wb = await fresh(serial('2026-10-16', '01:00'));     // 1 AM after the Oct 15 night
   eq(wb.get('TODAY', 'C3'), serial('2026-10-15'), 'still the Oct 15 night at 1 AM');
-  eq([6, 7, 8, 9].map((r) => wb.get('TODAY', `D${r}`)), ['BGMI', 'FIFA - Semi 1', 'FIFA - Semi 2', 'FIFA - Final'], 'order');
+  eq([6, 7, 8, 9, 10].map((r) => wb.get('TODAY', `D${r}`)),
+    ['Pickleball - Semi 2', 'BGMI', 'FIFA - Semi 1', 'FIFA - Semi 2', 'FIFA - Final'], 'Oct 15 order from the grid');
   const wb2 = await fresh(serial('2026-10-21', '12:00'));
   eq(wb2.get('TODAY', 'D6'), 'Cricket - Semi 1', 'cricket 06:00 first on Oct 21');
-  eq(wb2.get('TODAY', 'D10'), 'Volleyball Men - Semi 1', 'VB Men H v R last');
-  eq([wb2.get('TODAY', 'E10'), wb2.get('TODAY', 'F10')], ['Hufflepuff', 'Ravenclaw'], 'fixed VB Men fixture H v R');
+  eq(wb2.get('TODAY', 'D9'), 'Pickleball - Final', 'Pickleball final last on Oct 21');
   const r = wb2.matchRow('FIFA', 'Final');
-  eq(Math.abs(wb2.get('MATCHES', `AC${r}`) - serial('2026-10-16', '00:30')) < 1e-6, true, 'FIFA final real start = Oct 16 00:30');
+  eq(Math.abs(wb2.get('MATCHES', `AC${r}`) - serial('2026-10-16', '01:30')) < 1e-6, true, 'FIFA final real start = Oct 16 01:30');
+  wb2.set('TODAY', 'F3', serial('2026-10-20'));
+  eq(wb2.get('TODAY', 'D9'), 'Volleyball Men - Semi 1', 'VB Men H v R last on Oct 20');
+  eq([wb2.get('TODAY', 'E9'), wb2.get('TODAY', 'F9')], ['Hufflepuff', 'Ravenclaw'], 'VB Men fixture H v R');
   wb2.set('TODAY', 'F3', serial('2026-10-24'));
-  eq(wb2.get('TODAY', 'D6'), 'Cricket - Final', 'date override works');
-  eq(wb2.get('TODAY', 'D8'), 'Poker', 'Poker after Litfest');
+  eq([6, 7, 8, 9].map((x) => wb2.get('TODAY', `D${x}`)), ['Cricket - Final', 'Litfest', 'Table Tennis - Semi 1', 'Poker'], 'Oct 24 order (Litfest from 21:30)');
+  const dr = wb2.matchRow('Dodgeball', 'Semi 1');
+  eq(wb2.get('MATCHES', `B${dr}`), null, 'Dodgeball semis not in the grid -> no date');
 });
 
 await test('full tournament simulation adds up', async () => {
