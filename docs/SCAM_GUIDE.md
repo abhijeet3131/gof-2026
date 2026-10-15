@@ -96,6 +96,19 @@ Add one row per decision:
 
 Leave rows you don't need empty. To cancel an adjustment, delete its row's contents.
 
+**Points that belong to one event:** start the Reason with the event name exactly as in SETUP, then a colon, e.g. `BGMI: joint 2nd with Hufflepuff (50 pts split)`. The app then shows the points in that event's row of the Points Table and in the house breakdown, instead of under "SCAM adjustments". Totals are the same either way.
+
+**Tie for 2nd place in a single-round event** (e.g. BGMI, 15 Oct: Slytherin and Hufflepuff tied):
+1. In MATCHES, enter the **Winner / 1st** and leave **2nd place** blank. The row's Check will keep asking for a 2nd place; that's expected for a tie.
+2. In ADJUSTMENTS, add one row per tied house with its share of the 2nd-place points:
+
+   | Date | House | Points | Reason |
+   |---|---|---|---|
+   | 15-Oct-2026 | Slytherin | 25 | BGMI: joint 2nd with Hufflepuff (50 pts split) |
+   | 15-Oct-2026 | Hufflepuff | 25 | BGMI: joint 2nd with Slytherin (50 pts split) |
+
+The app then shows both houses as 🥈 joint 2nd on the match card and the sport page. A shared 2nd entered this way does **not** count as a "2nd place" in the leaderboard tiebreak.
+
 ## Fixing mistakes
 
 - Just correct the cell. Every total, bracket and the app recalculate.

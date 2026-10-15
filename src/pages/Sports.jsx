@@ -65,7 +65,11 @@ export function SportDetail({ data, ctx, now, name }) {
   const byStage = Object.fromEntries(matches.map((m) => [m.stage, m]));
   const dons = data.don.filter((d) => d.valid && d.event === name);
   const weasley = ctx.weasleyByEvent[name] || [];
-  const log = data.pointsLog.filter((p) => p.event === name && (p.place === '1st' || p.place === '2nd' || p.total !== 0))
+  const tied = !b.runnerUp && ctx.tiedSecond[name];
+  const adj = ctx.adjByEvent[name] || {};
+  const log = data.pointsLog.filter((p) => p.event === name)
+    .map((p) => (adj[p.house] ? { ...p, total: p.total + adj[p.house].points, place: p.place || (tied?.includes(p.house) ? 'Joint 2nd' : 'SCAM adjustment') } : p))
+    .filter((p) => p.place === '1st' || p.place === '2nd' || p.total !== 0 || adj[p.house])
     .sort((a, b) => b.total - a.total);
 
   return (
@@ -99,9 +103,13 @@ export function SportDetail({ data, ctx, now, name }) {
       ) : (
         <Section title="Result">
           {b.champion ? (
-            <div className="podium">
+            <div className={`podium ${tied ? 'podium--tie' : ''}`}>
               <div className="podium__step podium__step--1"><span>🥇</span><Crest house={b.champion} houseMap={ctx.houseMap} size={44} /><b>{b.champion}</b><small>{e.points1st} pts</small></div>
-              <div className="podium__step podium__step--2"><span>🥈</span><Crest house={b.runnerUp} houseMap={ctx.houseMap} size={44} /><b>{b.runnerUp}</b><small>{e.points2nd} pts</small></div>
+              {tied ? tied.map((h) => (
+                <div key={h} className="podium__step podium__step--2"><span>🥈</span><Crest house={h} houseMap={ctx.houseMap} size={44} /><b>{h}</b><small>Joint 2nd · {ctx.adjByEvent[name][h].points} pts</small></div>
+              )) : (
+                <div className="podium__step podium__step--2"><span>🥈</span><Crest house={b.runnerUp} houseMap={ctx.houseMap} size={44} /><b>{b.runnerUp}</b><small>{e.points2nd} pts</small></div>
+              )}
             </div>
           ) : (
             <div className="cards">{matches.map((m) => <MatchCard key={m.id} m={m} ctx={ctx} now={now} rollover={data.meta.rolloverHour} showDay />)}</div>

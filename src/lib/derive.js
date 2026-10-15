@@ -73,7 +73,36 @@ export function derive(data) {
   for (const p of data.pointsLog) {
     if (p.total !== 0 || p.place === '1st' || p.place === '2nd') (pointsByHouse[p.house] ||= []).push(p);
   }
-  return { houseMap, eventMap, donByEvent, weasleyByEvent, bracketMap, matchesByEvent, matchesByNight, pointsByHouse };
+  const { adjByEvent, adjTagged, adjTaggedSet } = tagAdjustments(data);
+  const tiedSecond = {};
+  for (const m of data.matches) {
+    if (m.format !== 'Single round' || !m.official || m.second || !adjByEvent[m.event]) continue;
+    const houses = Object.keys(adjByEvent[m.event]).filter((h) => adjByEvent[m.event][h].points > 0 && h !== m.winner);
+    if (houses.length) tiedSecond[m.event] = houses.sort();
+  }
+  return { houseMap, eventMap, donByEvent, weasleyByEvent, bracketMap, matchesByEvent, matchesByNight, pointsByHouse, adjByEvent, adjTagged, adjTaggedSet, tiedSecond };
+}
+
+/**
+ * SCAM adjustments whose reason starts with an event name ("BGMI: joint 2nd ...") belong to that event:
+ * the app shows them in the event's row and on its result, e.g. points split for a tie.
+ * adjByEvent[event][house] = { points, notes[] }; adjTagged[house] = total of tagged points;
+ * adjTaggedSet = the tagged adjustment rows.
+ */
+export function tagAdjustments(data) {
+  const names = data.events.map((e) => e.name).sort((a, b) => b.length - a.length);   // "Football Men" before "Football"
+  const adjByEvent = {}, adjTagged = {}, adjTaggedSet = new Set();
+  for (const a of data.adjustments) {
+    const reason = (a.reason || '').trim();
+    const event = names.find((n) => reason.toLowerCase().startsWith(n.toLowerCase()) && /^\s*[:\-–—]/.test(reason.slice(n.length)));
+    if (!event || !a.house) continue;
+    const slot = ((adjByEvent[event] ||= {})[a.house] ||= { points: 0, notes: [] });
+    slot.points += a.points;
+    slot.notes.push(reason.slice(event.length).replace(/^\s*[:\-–—]\s*/, ''));
+    adjTagged[a.house] = (adjTagged[a.house] || 0) + a.points;
+    adjTaggedSet.add(a);
+  }
+  return { adjByEvent, adjTagged, adjTaggedSet };
 }
 
 export function liveMatches(data, now) {

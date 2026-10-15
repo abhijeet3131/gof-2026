@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { matchState, textOn } from './lib/derive.js';
 import { fmtDay, fmtTime, isAfterMidnight } from './lib/time.js';
 import { href } from './hooks.js';
@@ -93,7 +94,9 @@ export function MatchCard({ m, ctx, now, rollover, showDay }) {
           state === 'done' ? (
             <div className="podium-mini">
               <span>🥇</span><HouseName house={m.winner} houseMap={houseMap} strong />
-              <span>🥈</span><HouseName house={m.second} houseMap={houseMap} />
+              {(ctx.tiedSecond[m.event] && !m.second ? ctx.tiedSecond[m.event] : [m.second]).map((h) => (
+                <Fragment key={h || '2nd'}><span>🥈</span><HouseName house={h} houseMap={houseMap} /></Fragment>
+              ))}
             </div>
           ) : <div className="mc__title">All four houses</div>
         ) : (

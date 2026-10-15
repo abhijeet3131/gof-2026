@@ -32,10 +32,18 @@ function explain(p, e) {
   return `${how} while on Double or Nothing: ${Math.abs(p.total)}-point penalty`;
 }
 
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
 function Breakdown({ house, data, ctx }) {
   const t = data.houseTotals.find((x) => x.house === house) || {};
-  const lines = (ctx.pointsByHouse[house] || []).slice().sort((a, b) => b.total - a.total)
+  const lines = (ctx.pointsByHouse[house] || [])
     .map((p) => ({ key: p.event, href: href('sports', p.event), title: p.event, don: p.donPick, text: explain(p, ctx.eventMap[p.event]), pts: p.total }));
+  // adjustments tagged to an event (e.g. a tied 2nd place) sit with the event points
+  for (const [event, byHouse] of Object.entries(ctx.adjByEvent)) {
+    const a = byHouse[house];
+    if (a) lines.push({ key: `adj-${event}`, href: href('sports', event), title: event, text: cap(a.notes.join('; ')) || 'SCAM adjustment', pts: a.points });
+  }
+  lines.sort((a, b) => b.pts - a.pts);
   for (const w of data.weasley) {
     if (w.challenger !== house || w.result === 'Pending') continue;
     lines.push({
@@ -43,11 +51,12 @@ function Breakdown({ house, data, ctx }) {
       text: `${w.result === 'Won' ? 'Beat' : 'Lost to'} ${w.challenged} in the ${w.event} semi-final (${w.result === 'Won' ? 'bonus' : 'penalty'} of ${Math.abs(w.points)} points)`,
     });
   }
-  data.adjustments.filter((a) => a.house === house).forEach((a, i) => {
+  const tagged = ctx.adjTagged[house] || 0;
+  data.adjustments.filter((a) => a.house === house && !ctx.adjTaggedSet.has(a)).forEach((a, i) => {
     lines.push({ key: `adj-${i}`, title: 'SCAM adjustment', text: a.reason || (a.points < 0 ? 'Penalty' : 'Bonus'), pts: a.points });
   });
   const parts = [
-    ['Events', t.eventPoints], ['DON', t.donEffect], ['Weasley', t.weasley], ['SCAM', t.adjustments],
+    ['Events', (t.eventPoints ?? 0) + tagged], ['DON', t.donEffect], ['Weasley', t.weasley], ['SCAM', (t.adjustments ?? 0) - tagged],
   ].filter(([, v], i) => i === 0 || v);
   return (
     <div className="breakdown-card" style={{ '--house': ctx.houseMap[house]?.colour }}>
@@ -82,7 +91,9 @@ function PointsTable({ data, ctx }) {
   const cell = {};
   for (const p of data.pointsLog) cell[`${p.event}|${p.house}`] = p;
   const sum = (field) => Object.fromEntries(houses.map((h) => [h, data.houseTotals.find((t) => t.house === h)?.[field] ?? 0]));
-  const extras = [['Weasley Challenge', sum('weasley')], ['SCAM adjustments', sum('adjustments')]]
+  const adj = sum('adjustments');
+  for (const h of houses) adj[h] -= ctx.adjTagged[h] || 0;     // event-tagged adjustments are shown in their event's row
+  const extras = [['Weasley Challenge', sum('weasley')], ['SCAM adjustments', adj]]
     .filter(([, row]) => houses.some((h) => row[h]));
   const totals = sum('total');
 
@@ -107,11 +118,13 @@ function PointsTable({ data, ctx }) {
                 <th scope="row"><a href={href('sports', e.name)}>{eventLabel(e)}</a></th>
                 {houses.map((h) => {
                   const p = cell[`${e.name}|${h}`];
+                  const a = ctx.adjByEvent[e.name]?.[h];
+                  const total = (p?.total || 0) + (a?.points || 0);
                   // show a number once the house's result in this event is known (placed or knocked out)
-                  const started = p && (p.place || p.total !== 0);
+                  const started = (p && (p.place || p.total !== 0 || p.status === 'Decided')) || a;
                   return (
-                    <td key={h} className={`${p?.donPick ? 'is-don' : ''} ${p?.total < 0 ? 'neg' : ''} ${started && p.total === 0 ? 'is-zero' : ''}`}>
-                      {started ? p.total : <span className="muted">–</span>}
+                    <td key={h} className={`${p?.donPick ? 'is-don' : ''} ${total < 0 ? 'neg' : ''} ${started && total === 0 ? 'is-zero' : ''}`}>
+                      {started ? total : <span className="muted">–</span>}
                     </td>
                   );
                 })}
