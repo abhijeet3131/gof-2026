@@ -54,6 +54,54 @@ export function orderSemis(data) {
   return { ...data, matches };
 }
 
+/**
+ * Finalists score early (website-only rule, agreed with SCAM on 18 Oct):
+ * a house that wins a knockout semi-final gets the event's 2nd-place points straight away,
+ * and counts as a 2nd place in the tiebreak. The sheet adds the rest when the final is entered.
+ * Sports with a DON pick on them (by any house) still wait for the final.
+ * Standings are re-ranked here: total, then more 1sts, then more 2nds, then shared rank.
+ */
+export function withFinalists(data) {
+  if (!data) return data;
+  const donEvents = new Set(data.don.filter((d) => d.valid && d.event).map((d) => d.event));
+  const decided = new Set(data.pointsLog.filter((p) => p.status === 'Decided').map((p) => p.event));
+  const eventMap = Object.fromEntries(data.events.map((e) => [e.name, e]));
+  const early = {};                                                     // "event|house" -> points
+  for (const m of data.matches) {
+    const e = eventMap[m.event];
+    if (!e || e.format !== 'Knockout' || !m.stage.startsWith('Semi') || !m.official || !m.winner) continue;
+    if (donEvents.has(m.event) || decided.has(m.event)) continue;
+    early[`${m.event}|${m.winner}`] = e.points2nd;
+  }
+  if (!Object.keys(early).length) return data;
+
+  const extra = {};                                                     // house -> { points, finals }
+  const pointsLog = data.pointsLog.map((p) => {
+    const pts = early[`${p.event}|${p.house}`];
+    if (pts === undefined || p.place) return p;
+    const x = (extra[p.house] ||= { points: 0, finals: 0 });
+    x.points += pts;
+    x.finals += 1;
+    return { ...p, place: '2nd', base: pts, total: pts, provisional: true };
+  });
+  const houseTotals = data.houseTotals.map((t) => {
+    const x = extra[t.house];
+    return x ? { ...t, eventPoints: t.eventPoints + x.points, total: t.total + x.points, seconds: t.seconds + x.finals } : t;
+  });
+  const byHouse = Object.fromEntries(houseTotals.map((t) => [t.house, t]));
+  const better = (a, b) => b.total - a.total || b.firsts - a.firsts || b.seconds - a.seconds;
+  const rows = data.standings.map((s) => {
+    const t = byHouse[s.house];
+    return t ? { ...s, total: t.total, firsts: t.firsts, seconds: t.seconds } : s;
+  });
+  rows.sort((a, b) => better(a, b) || a.house.localeCompare(b.house));
+  const lead = rows[0]?.total ?? 0;
+  const standings = rows.map((s, i) => ({
+    ...s, position: i + 1, rank: 1 + rows.filter((o) => better(o, s) < 0).length, behind: lead - s.total,
+  }));
+  return { ...data, pointsLog, houseTotals, standings };
+}
+
 export function derive(data) {
   if (!data) return null;
   const houseMap = Object.fromEntries(data.houses.map((h) => [h.name, h]));

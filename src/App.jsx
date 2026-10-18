@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { derive, liveMatches, orderSemis } from './lib/derive.js';
+import { derive, liveMatches, orderSemis, withFinalists } from './lib/derive.js';
 import { fmtAgo } from './lib/time.js';
 import { href, useNow, useRoute, useTournament } from './hooks.js';
 import Home from './pages/Home.jsx';
@@ -17,7 +17,7 @@ const NAV = [
 
 export default function App() {
   const { data: raw, checkedAt, error, refreshing, refresh } = useTournament();
-  const data = useMemo(() => orderSemis(raw), [raw]);
+  const data = useMemo(() => withFinalists(orderSemis(raw)), [raw]);
   const now = useNow(10000);
   const [page = '', param] = useRoute();
   const ctx = useMemo(() => derive(data), [data]);

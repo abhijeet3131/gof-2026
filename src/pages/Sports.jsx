@@ -136,7 +136,7 @@ export function SportDetail({ data, ctx, now, name }) {
             {log.map((p) => (
               <li key={p.house}>
                 <HouseName house={p.house} houseMap={ctx.houseMap} />
-                <span>{p.place}{p.donPick ? ' · DON' : ''}</span>
+                <span>{p.provisional ? 'Finalist' : p.place}{p.donPick ? ' · DON' : ''}</span>
                 <b className={p.total < 0 ? 'neg' : ''}>{signed(p.total)}</b>
               </li>
             ))}

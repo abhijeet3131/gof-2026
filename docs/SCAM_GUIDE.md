@@ -121,7 +121,7 @@ The app then shows both houses as 🥈 joint 2nd on the match card and the sport
 |---|---|
 | **TODAY** | Tonight's matches in order. Type a date in `F3` to look at another night; clear it to go back. |
 | **DASHBOARD** | Leader, live matches, next match, data problems, DON summary. |
-| **LEADERBOARD** | Totals with the breakdown: event points, DON, Weasley, adjustments, 1st/2nd counts. |
+| **LEADERBOARD** | Totals with the breakdown: event points, DON, Weasley, adjustments, 1st/2nd counts. ⚠️ The website also gives semi-final winners their 2nd-place points before the final (not in DON sports), so its totals can be higher than this tab until the final is played. Nothing to enter: just record the semi result as usual. |
 | **BRACKETS** | Every event's semis, final, champion and runner-up. |
 | **POINTS_LOG** | Points per event per house: place, base points, DON effect. |
 

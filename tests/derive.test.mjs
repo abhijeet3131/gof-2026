@@ -1,6 +1,6 @@
 // Tests for the app-side views in src/lib/derive.js.
 import { describe, expect, it } from 'vitest';
-import { derive, orderSemis } from '../src/lib/derive.js';
+import { derive, orderSemis, withFinalists } from '../src/lib/derive.js';
 
 const match = (event, stage, night, sort, teamA = '', teamB = '') => ({ id: `${event}|${stage}`, event, stage, night, sort, teamA, teamB });
 const get = (data, event, stage) => data.matches.find((m) => m.event === event && m.stage === stage);
@@ -63,5 +63,42 @@ describe('SCAM adjustments tagged to an event ("BGMI: ...")', () => {
     ] });
     expect(Object.keys(ctx.adjByEvent)).toEqual(['Football Men']);
     expect(ctx.tiedSecond).toEqual({});
+  });
+});
+
+describe('withFinalists: semi-final winners get 2nd-place points before the final', () => {
+  const houses = ['Gryffindor', 'Hufflepuff', 'Ravenclaw', 'Slytherin'];
+  const semi = (event, stage, winner) => ({ event, stage, official: true, winner, night: '2026-10-20', sort: 1 });
+  const log = (event, status = 'In progress') => houses.map((house) => ({ event, house, place: '', base: 0, donPick: false, donEffect: 0, total: 0, status }));
+  const zero = (house) => ({ house, eventPoints: 0, donEffect: 0, weasley: 0, adjustments: 0, total: 0, firsts: 0, seconds: 0, rank: 1 });
+  const data = (extra = {}) => ({
+    events: [
+      { name: 'Football Men', format: 'Knockout', points1st: 200, points2nd: 100 },
+      { name: 'Chess', format: 'Knockout', points1st: 100, points2nd: 50 },
+    ],
+    matches: [semi('Football Men', 'Semi 1', 'Slytherin'), semi('Football Men', 'Semi 2', 'Gryffindor'), semi('Chess', 'Semi 1', 'Ravenclaw')],
+    don: [], pointsLog: [...log('Football Men'), ...log('Chess')],
+    houseTotals: houses.map(zero),
+    standings: houses.map((house, i) => ({ position: i + 1, house, total: 0, firsts: 0, seconds: 0, rank: 1, behind: 0 })),
+    ...extra,
+  });
+
+  it('adds the points, counts a 2nd place and re-ranks', () => {
+    const out = withFinalists(data());
+    expect(out.pointsLog.find((p) => p.event === 'Football Men' && p.house === 'Slytherin')).toMatchObject({ place: '2nd', total: 100, provisional: true });
+    expect(out.houseTotals.find((t) => t.house === 'Gryffindor')).toMatchObject({ eventPoints: 100, total: 100, seconds: 1 });
+    expect(out.standings.map((s) => [s.house, s.total, s.rank])).toEqual([
+      ['Gryffindor', 100, 1], ['Slytherin', 100, 1], ['Ravenclaw', 50, 3], ['Hufflepuff', 0, 4],
+    ]);
+    expect(out.standings[2].behind).toBe(50);
+  });
+
+  it('waits for the final in a sport with a DON pick, and once the final is entered', () => {
+    const out = withFinalists(data({
+      don: [{ house: 'Hufflepuff', event: 'Football Men', valid: true }],
+      pointsLog: [...log('Football Men'), ...log('Chess', 'Decided')],
+    }));
+    expect(out.pointsLog.some((p) => p.provisional)).toBe(false);
+    expect(out.standings.every((s) => s.total === 0)).toBe(true);
   });
 });

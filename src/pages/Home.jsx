@@ -25,6 +25,7 @@ function Pennant({ s, ctx, tied, selected, onSelect }) {
 
 /** Plain-language reason for a house's points in one event, e.g. "2nd place in BGMI (worth 50 points)". */
 function explain(p, e) {
+  if (p.provisional) return `Reached the ${p.event} final: ${p.base} points now, ${e?.points1st ?? 'more'} in total if they win it`;
   if (!p.donPick) return `${p.place} place in ${p.event} (worth ${p.base} points)`;
   if (p.place === '1st') return `Won ${p.event} on Double or Nothing: ${p.base} points doubled to ${p.total}`;
   if (p.place === '2nd') return `2nd place in ${p.event} on Double or Nothing, so the ${p.base} points are lost`;
@@ -123,8 +124,10 @@ function PointsTable({ data, ctx }) {
                   // show a number once the house's result in this event is known (placed or knocked out)
                   const started = (p && (p.place || p.total !== 0 || p.status === 'Decided')) || a;
                   return (
-                    <td key={h} className={`${p?.donPick ? 'is-don' : ''} ${total < 0 ? 'neg' : ''} ${started && total === 0 ? 'is-zero' : ''}`}>
+                    <td key={h} className={`${p?.donPick ? 'is-don' : ''} ${total < 0 ? 'neg' : ''} ${started && total === 0 ? 'is-zero' : ''}`}
+                      title={p?.provisional ? 'Finalist: points for reaching the final' : undefined}>
                       {started ? total : <span className="muted">–</span>}
+                      {p?.provisional && <sup className="prov">F</sup>}
                     </td>
                   );
                 })}
@@ -146,6 +149,9 @@ function PointsTable({ data, ctx }) {
         </table>
       </div>
       <p className="legend"><i className="legend__don" /> Double or Nothing pick</p>
+      {data.pointsLog.some((p) => p.provisional) && (
+        <p className="legend"><sup className="prov">F</sup> Finalist: points for reaching the final. The winner gets the rest after the final (DON sports are scored after the final).</p>
+      )}
     </>
   );
 }
