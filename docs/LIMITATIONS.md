@@ -25,7 +25,7 @@
 - **Scores are free text.** The app doesn't model sets, frames or overs; only the **Winner** affects points.
 - **Rulebook special cases are applied by the scorer**, not by formulas: BGMI same-house squads, the Poker third-to-last rule, chess Armageddon, the cricket super over and penalty shoot-outs.
 - **Shared rank** happens only if total points, 1st places and 2nd places are all equal.
-- **Finalist points are added by the website, not the sheet.** Between a semi-final and its final, the app's totals and ranks include the finalist's 2nd-place points but the sheet's LEADERBOARD doesn't. They match again once the final result is entered. Sports with a DON pick wait for the final in both.
+- **Finalist points are added by the website, not the sheet.** Between a semi-final and its final, the app's totals and ranks include the finalist's 2nd-place points but the sheet's LEADERBOARD doesn't. They match again once the final result is entered. A house that put its DON on that sport gets nothing early, in either.
 - **No notifications.** The app doesn't send push alerts.
 - **Offline use** is limited. The last loaded data stays on the phone and is shown with an "Offline" label until the connection returns.
 

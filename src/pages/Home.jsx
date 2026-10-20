@@ -116,7 +116,10 @@ function PointsTable({ data, ctx }) {
           <tbody>
             {sortEvents(data.events).map((e) => (
               <tr key={e.name}>
-                <th scope="row"><a href={href('sports', e.name)}>{eventLabel(e)}</a></th>
+                <th scope="row">
+                  <a href={href('sports', e.name)}>{eventLabel(e)}</a>
+                  {ctx.bracketMap[e.name]?.status === 'Decided' && <small className="grid__done"> (Completed)</small>}
+                </th>
                 {houses.map((h) => {
                   const p = cell[`${e.name}|${h}`];
                   const a = ctx.adjByEvent[e.name]?.[h];
@@ -150,7 +153,7 @@ function PointsTable({ data, ctx }) {
       </div>
       <p className="legend"><i className="legend__don" /> Double or Nothing pick</p>
       {data.pointsLog.some((p) => p.provisional) && (
-        <p className="legend"><sup className="prov">F</sup> Finalist: points for reaching the final. The winner gets the rest after the final (DON sports are scored after the final).</p>
+        <p className="legend"><sup className="prov">F</sup> Finalist: points for reaching the final. The winner gets the rest after the final. A house's DON sport is scored only after the final.</p>
       )}
     </>
   );
@@ -158,7 +161,7 @@ function PointsTable({ data, ctx }) {
 
 export default function Home({ data, ctx, now }) {
   const [open, setOpen] = useState(null);
-  const recent = recentResults(data, 3);
+  const recent = recentResults(data, 10);       // newest first
   const rankCount = data.standings.reduce((m, s) => ({ ...m, [s.rank]: (m[s.rank] || 0) + 1 }), {});
 
   return (

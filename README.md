@@ -69,6 +69,6 @@ Regenerates `GOF_2026_Workbook.xlsx`. ⚠️ This creates a **fresh, empty** wor
   - Out (lost a semifinal, not in the top 2, or a no-show) = −100, applied as soon as it is certain.
 - **Weasley Challenge:** the challenger gets +50 for winning the locked semifinal and −50 for losing it. The challenged house is unaffected.
 - A team that doesn't show up for a final still gets 2nd place.
-- **Finalists score early (website only, from 18 Oct):** a house that wins a knockout semi-final gets the event's 2nd-place points straight away, and counts as a 2nd place in the tiebreak. The winner gets the rest once the final is entered. Sports with a DON pick on them (by any house) still score only after the final. The app adds these points itself (`withFinalists` in `src/lib/derive.js`), so the sheet's LEADERBOARD shows less than the app until each final is played.
+- **Finalists score early (website only, from 18 Oct):** a house that wins a knockout semi-final gets the event's 2nd-place points straight away, and counts as a 2nd place in the tiebreak. The winner gets the rest once the final is entered. A house that put its DON on that sport still scores only after the final (the other finalist scores early). The app adds these points itself (`withFinalists` in `src/lib/derive.js`), so the sheet's LEADERBOARD shows less than the app until each final is played.
 - **Ties:** decided by more 1st places, then more 2nd places. If still level, the houses share the rank.
 - SCAM adjustments (bonuses or penalties) are added from the `ADJUSTMENTS` tab.

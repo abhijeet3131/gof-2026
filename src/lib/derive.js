@@ -58,19 +58,19 @@ export function orderSemis(data) {
  * Finalists score early (website-only rule, agreed with SCAM on 18 Oct):
  * a house that wins a knockout semi-final gets the event's 2nd-place points straight away,
  * and counts as a 2nd place in the tiebreak. The sheet adds the rest when the final is entered.
- * Sports with a DON pick on them (by any house) still wait for the final.
+ * A house that put its DON on that sport still waits for the final (other finalists don't).
  * Standings are re-ranked here: total, then more 1sts, then more 2nds, then shared rank.
  */
 export function withFinalists(data) {
   if (!data) return data;
-  const donEvents = new Set(data.don.filter((d) => d.valid && d.event).map((d) => d.event));
+  const donPicks = new Set(data.don.filter((d) => d.valid && d.event).map((d) => `${d.event}|${d.house}`));
   const decided = new Set(data.pointsLog.filter((p) => p.status === 'Decided').map((p) => p.event));
   const eventMap = Object.fromEntries(data.events.map((e) => [e.name, e]));
   const early = {};                                                     // "event|house" -> points
   for (const m of data.matches) {
     const e = eventMap[m.event];
     if (!e || e.format !== 'Knockout' || !m.stage.startsWith('Semi') || !m.official || !m.winner) continue;
-    if (donEvents.has(m.event) || decided.has(m.event)) continue;
+    if (donPicks.has(`${m.event}|${m.winner}`) || decided.has(m.event)) continue;
     early[`${m.event}|${m.winner}`] = e.points2nd;
   }
   if (!Object.keys(early).length) return data;

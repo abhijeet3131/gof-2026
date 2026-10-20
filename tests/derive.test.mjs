@@ -93,12 +93,15 @@ describe('withFinalists: semi-final winners get 2nd-place points before the fina
     expect(out.standings[2].behind).toBe(50);
   });
 
-  it('waits for the final in a sport with a DON pick, and once the final is entered', () => {
-    const out = withFinalists(data({
-      don: [{ house: 'Hufflepuff', event: 'Football Men', valid: true }],
-      pointsLog: [...log('Football Men'), ...log('Chess', 'Decided')],
-    }));
-    expect(out.pointsLog.some((p) => p.provisional)).toBe(false);
+  it('only the house with its DON on that sport waits for the final', () => {
+    const out = withFinalists(data({ don: [{ house: 'Slytherin', event: 'Football Men', valid: true }] }));
+    const fm = (h) => out.pointsLog.find((p) => p.event === 'Football Men' && p.house === h);
+    expect(fm('Slytherin')).toMatchObject({ place: '', total: 0 });
+    expect(fm('Gryffindor')).toMatchObject({ place: '2nd', total: 100, provisional: true });
+  });
+
+  it('adds nothing once the final has been entered', () => {
+    const out = withFinalists(data({ pointsLog: [...log('Football Men', 'Decided'), ...log('Chess', 'Decided')] }));
     expect(out.standings.every((s) => s.total === 0)).toBe(true);
   });
 });
