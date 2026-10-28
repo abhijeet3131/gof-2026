@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Crest, Empty, HouseName, MatchCard, Section, signed } from '../components.jsx';
-import { GENDER_ORDER } from '../lib/derive.js';
+import { GENDER_ORDER, textOn } from '../lib/derive.js';
 import { fmtDay, fmtTime, isAfterMidnight } from '../lib/time.js';
 import { href } from '../hooks.js';
 
@@ -17,9 +17,12 @@ export function SportsList({ data, ctx }) {
       <ul className="eventgrid">
         {events.map((e) => {
           const b = ctx.bracketMap[e.name] || {};
+          // a finished sport takes the winning house's colour
+          const won = b.champion && ctx.houseMap[b.champion]?.colour;
           return (
             <li key={e.name}>
-              <a className={`eventcard eventcard--${(b.status || 'Upcoming').replace(' ', '-').toLowerCase()}`} href={href('sports', e.name)}>
+              <a className={`eventcard eventcard--${(b.status || 'Upcoming').replace(' ', '-').toLowerCase()} ${won ? 'eventcard--won' : ''}`}
+                style={won ? { '--house': won, '--on': textOn(won) } : undefined} href={href('sports', e.name)}>
                 <b className="eventcard__name">{e.name}</b>
                 <span className="eventcard__status">
                   {b.champion ? (

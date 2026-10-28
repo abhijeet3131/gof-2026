@@ -427,3 +427,20 @@ a.sg__item:hover { border-color: var(--accent); }
   .sg__date { padding: 4px 6px; }
   .sg__title { font-size: 11px; }
 }
+
+/* ---------- finished sports in the winning house's colour ---------- */
+.eventcard--won {
+  background-color: var(--house);
+  background-image: linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.22));
+  border-color: rgba(255, 255, 255, 0.18); color: var(--on);
+}
+.eventcard--won .eventcard__status { color: var(--on); }
+.eventcard--won:hover { filter: brightness(1.06); }
+.grid tr.is-won th, .grid tr.is-won td {
+  background-color: var(--house);
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12));
+  color: var(--on); border-bottom-color: rgba(0, 0, 0, 0.28);
+}
+.grid tr.is-won a, .grid tr.is-won .grid__done, .grid tr.is-won td.neg { color: var(--on); }
+.grid tr.is-won td.is-zero { color: color-mix(in srgb, var(--on) 68%, var(--house)); font-weight: 500; }
+.grid tr.is-won td.is-don { box-shadow: inset 0 0 0 2px var(--on); }

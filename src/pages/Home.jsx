@@ -114,8 +114,12 @@ function PointsTable({ data, ctx }) {
             </tr>
           </thead>
           <tbody>
-            {sortEvents(data.events).map((e) => (
-              <tr key={e.name}>
+            {sortEvents(data.events).map((e) => {
+              // a completed sport's row takes the winning house's colour
+              const b = ctx.bracketMap[e.name];
+              const won = b?.status === 'Decided' && ctx.houseMap[b.champion]?.colour;
+              return (
+              <tr key={e.name} className={won ? 'is-won' : undefined} style={won ? { '--house': won, '--on': textOn(won) } : undefined}>
                 <th scope="row">
                   <a href={href('sports', e.name)}>{eventLabel(e)}</a>
                   {ctx.bracketMap[e.name]?.status === 'Decided' && <small className="grid__done"> (Completed)</small>}
@@ -135,7 +139,8 @@ function PointsTable({ data, ctx }) {
                   );
                 })}
               </tr>
-            ))}
+              );
+            })}
             {extras.map(([label, row]) => (
               <tr key={label} className="grid__extra">
                 <th scope="row">{label}</th>
