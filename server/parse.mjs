@@ -81,8 +81,17 @@ export function buildPayload(sheets, meta = {}) {
     .filter((h) => str(h.House))
     .map((h) => ({ name: str(h.House), code: str(h.Code), colour: str(h.Colour) || '#888888' }));
 
+  // A sport whose MATCHES rows are all Status "Cancelled" is dropped from the app entirely
+  // (e.g. Lawn Tennis, cancelled 28 Oct): no card, no points-table row, no bracket.
+  const statusByEvent = {};
+  for (const m of readTable(sheets.MATCHES, ['Match ID', 'Date'])) {
+    if (str(m.Event) && str(m.Type) !== 'Event') (statusByEvent[str(m.Event)] ||= []).push(str(m.Status));
+  }
+  const cancelled = new Set(Object.keys(statusByEvent).filter((e) => statusByEvent[e].every((s) => s === 'Cancelled')));
+  const playing = (name) => !cancelled.has(name);
+
   const events = readTable(sheets.SETUP, ['Event', 'Sport'])
-    .filter((e) => str(e.Event))
+    .filter((e) => str(e.Event) && playing(str(e.Event)))
     .map((e) => ({
       name: str(e.Event), sport: str(e.Sport), gender: str(e.Gender), format: str(e.Format),
       points1st: num(e['Points 1st']) ?? 0, points2nd: num(e['Points 2nd']) ?? 0,
@@ -90,7 +99,7 @@ export function buildPayload(sheets, meta = {}) {
     }));
 
   const matches = readTable(sheets.MATCHES, ['Match ID', 'Date'])
-    .filter((m) => str(m.Name) && !isEmpty(m.Date))
+    .filter((m) => str(m.Name) && !isEmpty(m.Date) && playing(str(m.Event)))
     .map((m) => {
       const official = str(m.Official) === 'Yes';
       return {
@@ -153,7 +162,7 @@ export function buildPayload(sheets, meta = {}) {
     }));
 
   const pointsLog = readTable(sheets.POINTS_LOG, ['Event', 'House'])
-    .filter((p) => str(p.Event) && str(p.House))
+    .filter((p) => str(p.Event) && str(p.House) && playing(str(p.Event)))
     .map((p) => ({
       event: str(p.Event), house: str(p.House), place: str(p.Place),
       base: num(p['Base points']) ?? 0, donPick: str(p['DON pick']) === 'Yes',
@@ -161,7 +170,7 @@ export function buildPayload(sheets, meta = {}) {
     }));
 
   const brackets = readTable(sheets.BRACKETS, ['Event', 'Format'])
-    .filter((b) => str(b.Event))
+    .filter((b) => str(b.Event) && playing(str(b.Event)))
     .map((b) => ({
       event: str(b.Event), format: str(b.Format), champion: str(b.Champion),
       runnerUp: str(b['Runner-up']), status: str(b.Status) || 'Upcoming',

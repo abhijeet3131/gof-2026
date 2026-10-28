@@ -109,6 +109,14 @@ Leave rows you don't need empty. To cancel an adjustment, delete its row's conte
 
 The app then shows both houses as 🥈 joint 2nd on the match card and the sport page. A shared 2nd entered this way does **not** count as a "2nd place" in the leaderboard tiebreak.
 
+## Cancelling a whole sport
+
+To drop a sport from the tournament (for example Lawn Tennis, cancelled on 28 Oct):
+1. Remove its cells from the SCHEDULE grid. The sync then clears its dates.
+2. In MATCHES, set **Status** to **Cancelled** on **every** row of that sport (semis and final).
+
+Within about a minute the sport disappears from the app: no card on the Sports page, no row in the Points Table, no bracket. Leave its row in SETUP alone, because deleting it would shift the formulas. If even one of its rows isn't "Cancelled", the sport still shows.
+
 ## Fixing mistakes
 
 - Just correct the cell. Every total, bracket and the app recalculate.

@@ -81,3 +81,22 @@ describe('time helpers', () => {
     expect(matchState(tt, Date.parse('2026-10-25T03:00:00+05:30'))).toBe('awaiting');
   });
 });
+
+describe('cancelled sports', () => {
+  it('drops a sport from the payload once all its MATCHES rows are Status "Cancelled"', () => {
+    const sheets = JSON.parse(JSON.stringify(demo));
+    const grid = sheets.MATCHES;
+    const h = grid.findIndex((row) => row.includes('Match ID'));
+    const ev = grid[h].indexOf('Event'), st = grid[h].indexOf('Status');
+    const rows = grid.filter((row, i) => i > h && row[ev] === 'Lawn Tennis');
+    expect(rows).toHaveLength(3);
+    rows[0][st] = 'Cancelled';
+    rows[1][st] = 'Cancelled';
+    expect(buildPayload(sheets).events.some((e) => e.name === 'Lawn Tennis')).toBe(true);   // one row still live
+    rows[2][st] = 'Cancelled';
+    const out = buildPayload(sheets);
+    expect(out.events.map((e) => e.name)).not.toContain('Lawn Tennis');
+    expect(out.events).toHaveLength(20);
+    for (const key of ['matches', 'pointsLog', 'brackets']) expect(out[key].some((x) => x.event === 'Lawn Tennis')).toBe(false);
+  });
+});
