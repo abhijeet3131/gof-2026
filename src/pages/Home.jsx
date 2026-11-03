@@ -315,6 +315,7 @@ export default function Home({ data, ctx, now, fin }) {
   return (
     <>
       {fin && <ChampionHero fin={fin} ctx={ctx} data={data} />}
+      {fin && <Credits />}
       <Section title={fin ? 'Final Standings' : 'Current Standings'}>
         <ol className="pennants">
           {data.standings.map((s) => (
@@ -344,8 +345,6 @@ export default function Home({ data, ctx, now, fin }) {
           <div className="cards">{recent.map((m) => <MatchCard key={m.id} m={m} ctx={ctx} now={now} rollover={data.meta.rolloverHour} showDay />)}</div>
         ) : <Empty>No results yet — the tournament starts soon!</Empty>}
       </Section>
-
-      {fin && <Credits />}
     </>
   );
 }

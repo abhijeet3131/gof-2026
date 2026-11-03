@@ -452,17 +452,17 @@ a.sg__item:hover { border-color: var(--accent); }
   background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--house) 38%, #141213) 0%, #141213 65%);
   animation: celebrate-in 0.5s ease both;
 }
-.celebrate__card { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; max-width: 440px; }
+.celebrate__card { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; width: min(100%, 900px); }
 .celebrate__logo { width: min(36vw, 150px); height: auto; filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.6)); }
 .celebrate__kicker { margin: 4px 0 0; font: 700 14px var(--cond); letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); }
 .celebrate__crests { display: flex; gap: 14px; margin: 6px 0; animation: celebrate-pop 0.7s 0.15s cubic-bezier(.2, 1.4, .4, 1) both; }
 .celebrate__crests .crest { filter: drop-shadow(0 10px 30px color-mix(in srgb, var(--house) 70%, transparent)); }
 .celebrate__name {
-  margin: 0; font: 400 clamp(32px, 10.5vw, 76px)/0.95 var(--varsity); letter-spacing: 0; text-transform: uppercase; max-width: 100%;
+  margin: 0; font: 400 clamp(32px, 10.5vw, 76px)/0.95 var(--varsity); letter-spacing: 0; text-transform: uppercase; white-space: nowrap; align-self: center;
   color: var(--house); text-shadow: 0 3px 0 rgba(0, 0, 0, 0.45), 0 0 34px color-mix(in srgb, var(--house) 55%, transparent);
   animation: celebrate-pop 0.7s 0.3s cubic-bezier(.2, 1.4, .4, 1) both;
 }
-.celebrate__stats { margin: 4px 0 0; font: 600 16px var(--cond); letter-spacing: 0.04em; color: var(--text); }
+.celebrate__stats { margin: 4px auto 0; max-width: 440px; font: 600 16px var(--cond); letter-spacing: 0.04em; color: var(--text); }
 .celebrate__stats b { font: 400 20px var(--varsity); color: var(--house); }
 .celebrate__hostels { margin: 0; font: 600 12.5px var(--cond); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .celebrate__btn { margin-top: 14px; padding: 12px 22px; border-radius: 999px; background: var(--house); color: var(--on); font: 700 15px var(--cond); letter-spacing: 0.08em; text-transform: uppercase; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
@@ -555,7 +555,7 @@ a.medals__house:hover { text-decoration: underline; }
 @media (max-width: 420px) { .recap-tiles--4 { grid-template-columns: repeat(2, 1fr); } .househead { grid-template-columns: auto 1fr; } .househead__pts { grid-column: 1 / -1; text-align: left; } }
 
 /* ---------- thank you / credits ---------- */
-.credits { margin: 28px 0 8px; padding: 22px 18px; border-radius: 18px; text-align: center; background: var(--surface); border: 1px solid var(--border); }
+.credits { margin: 14px 0 8px; padding: 22px 18px; border-radius: 18px; text-align: center; background: var(--surface); border: 1px solid var(--border); }
 .credits img { border-radius: 50%; }
 .credits h2 { margin: 8px 0 6px; font: 400 26px var(--varsity); text-transform: uppercase; }
 .credits > p { margin: 0 auto; max-width: 520px; color: var(--muted); line-height: 1.5; }
