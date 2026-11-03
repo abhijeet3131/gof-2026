@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Crest, Empty, MatchCard, Section, signed } from '../components.jsx';
-import { recentResults, textOn } from '../lib/derive.js';
+import { Crest, Empty, MatchCard, Section, donPoints, fmtPts, signed, stageName } from '../components.jsx';
+import { REPLAY_EVENT } from '../Celebration.jsx';
+import PointsRace from '../PointsRace.jsx';
+import { shareCard } from '../shareCard.js';
+import { parseScore, recentResults, textOn } from '../lib/derive.js';
 import { eventLabel, hostelsOf, ordinal, sortEvents } from '../lib/brand.js';
 import { href } from '../hooks.js';
 
@@ -35,7 +38,7 @@ function explain(p, e) {
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-function Breakdown({ house, data, ctx }) {
+export function Breakdown({ house, data, ctx, link = true }) {
   const t = data.houseTotals.find((x) => x.house === house) || {};
   const lines = (ctx.pointsByHouse[house] || [])
     .map((p) => ({ key: p.event, href: href('sports', p.event), title: p.event, don: p.donPick, text: explain(p, ctx.eventMap[p.event]), pts: p.total }));
@@ -57,7 +60,7 @@ function Breakdown({ house, data, ctx }) {
     lines.push({ key: `adj-${i}`, title: 'SCAM adjustment', text: a.reason || (a.points < 0 ? 'Penalty' : 'Bonus'), pts: a.points });
   });
   const parts = [
-    ['Events', (t.eventPoints ?? 0) + tagged], ['DON', t.donEffect], ['Weasley', t.weasley], ['SCAM', (t.adjustments ?? 0) - tagged],
+    ['Events', (t.eventPoints ?? 0) + (t.donEffect ?? 0) + tagged], ['Weasley', t.weasley], ['SCAM', (t.adjustments ?? 0) - tagged],
   ].filter(([, v], i) => i === 0 || v);
   return (
     <div className="breakdown-card" style={{ '--house': ctx.houseMap[house]?.colour }}>
@@ -65,6 +68,7 @@ function Breakdown({ house, data, ctx }) {
         <h3>{house}</h3>
         <b className="breakdown-card__total">{t.total ?? 0}<small> pts</small></b>
       </div>
+      {link && <a className="breakdown-card__more" href={href('house', house)}>See {house}'s whole tournament →</a>}
       <p className="breakdown-card__parts">
         {parts.map(([k, v], i) => <span key={k}>{k} <b>{i === 0 ? v ?? 0 : signed(v)}</b></span>)}
       </p>
@@ -164,14 +168,154 @@ function PointsTable({ data, ctx }) {
   );
 }
 
-export default function Home({ data, ctx, now }) {
+/** Big banner for the House Cup winner, shown once every sport is decided. */
+function ChampionHero({ fin, ctx, data }) {
+  const [sharing, setSharing] = useState('');
+  const share = async () => {
+    setSharing('Making the image…');
+    try { const r = await shareCard(data, ctx); setSharing(r === 'downloaded' ? 'Image saved' : ''); } catch { setSharing('Could not make the image'); }
+    setTimeout(() => setSharing(''), 2500);
+  };
+  const house = fin.champions[0];
+  const colour = ctx.houseMap[house]?.colour || '#a8d43b';
+  const joint = fin.champions.length > 1;
+  return (
+    <section className="champ" style={{ '--house': colour, '--on': textOn(colour) }} aria-label="House Cup champions">
+      <p className="champ__kicker">🏆 {joint ? 'Joint House Cup Champions' : 'House Cup Champions'} 2026</p>
+      <div className="champ__row">
+        <div className="champ__crests">{fin.champions.map((h) => <Crest key={h} house={h} houseMap={ctx.houseMap} size={84} />)}</div>
+        <div>
+          <h1 className="champ__name">{fin.champions.join(' & ')}</h1>
+          {!joint && <p className="champ__hostels">{hostelsOf(house).join(' · ')}</p>}
+        </div>
+      </div>
+      {!joint && (
+        <dl className="champ__stats">
+          <div><dt>Points</dt><dd>{fin.lead}</dd></div>
+          <div><dt>Sports won</dt><dd>{fin.titles[house]?.length || 0}</dd></div>
+          <div><dt>Ahead of 2nd</dt><dd>+{fin.margin}</dd></div>
+        </dl>
+      )}
+      {!joint && fin.titles[house] && (
+        <ul className="champ__titles" aria-label="Sports won">
+          {fin.titles[house].map((e) => <li key={e}><a href={href('sports', e)}>{e}</a></li>)}
+        </ul>
+      )}
+      <div className="champ__actions">
+        <button className="champ__btn champ__btn--solid" onClick={share} disabled={!!sharing}>📤 {sharing || 'Share final standings'}</button>
+        {!joint && <a className="champ__btn" href={href('house', house)}>{house}'s tournament →</a>}
+        <button className="champ__btn" onClick={() => window.dispatchEvent(new Event(REPLAY_EVENT))}>🎉 Celebrate again</button>
+      </div>
+    </section>
+  );
+}
+
+const DON_OUTCOME = { '1st': 'Won it: points doubled', '2nd': 'Runner-up: no points', Out: 'Knocked out: penalty' };
+
+/** End-of-tournament recap: medal table, DON and Weasley outcomes, standout results. */
+function Recap({ data, ctx, fin }) {
+  const sc = (m) => { const p = parseScore(m.score); return p ? `${Math.max(...p)}–${Math.min(...p)}` : m.score; };   // winner first
+  return (
+    <Section title="Tournament in numbers">
+      <ul className="recap-tiles">
+        <li><b>{fin.played}</b><span>matches played</span></li>
+        <li><b>{fin.sports}</b><span>sports</span></li>
+        <li><b>{data.matches.filter((m) => m.type === 'Event').length}</b><span>events & nights</span></li>
+      </ul>
+
+      <h3 className="recap-h">Medal table</h3>
+      <div className="tablewrap">
+        <table className="grid medals">
+          <thead><tr><th scope="col">House</th><th scope="col">🥇 Won</th><th scope="col">🥈 Runner-up</th><th scope="col">Points</th></tr></thead>
+          <tbody>
+            {fin.medals.map((r) => (
+              <tr key={r.house} className={r.rank === 1 ? 'is-won' : undefined}
+                style={r.rank === 1 ? { '--house': ctx.houseMap[r.house]?.colour, '--on': textOn(ctx.houseMap[r.house]?.colour) } : undefined}>
+                <th scope="row"><a className="medals__house" href={href('house', r.house)}><Crest house={r.house} houseMap={ctx.houseMap} size={20} /> {ordinal(r.rank)} · {r.house}</a></th>
+                <td>{r.gold}</td><td>{r.silver}</td><td>{r.total}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3 className="recap-h">Double or Nothing: how the bets landed</h3>
+      <ul className="stakes">
+        {fin.don.map((d) => (
+          <li key={d.house}>
+            <HouseNameLite house={d.house} ctx={ctx} />
+            <span><a href={href('sports', d.event)}>{d.event}</a> · {DON_OUTCOME[d.place] || 'Pending'}</span>
+            <b className={donPoints(d) < 0 ? 'neg' : ''}>{fmtPts(donPoints(d))}</b>
+          </li>
+        ))}
+      </ul>
+
+      {fin.weasley.length > 0 && (
+        <>
+          <h3 className="recap-h">Weasley Challenges</h3>
+          <ul className="stakes">
+            {fin.weasley.map((w) => (
+              <li key={w.challenger + w.event}>
+                <HouseNameLite house={w.challenger} ctx={ctx} />
+                <span>{w.result === 'Won' ? 'Beat' : 'Lost to'} {w.challenged} · {w.event}</span>
+                <b className={w.points < 0 ? 'neg' : ''}>{signed(w.points)}</b>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {(fin.closest || fin.biggest) && (
+        <>
+          <h3 className="recap-h">Moments</h3>
+          <ul className="moments">
+            {fin.closest && (
+              <li><span className="moments__tag">Closest final</span>
+                <a href={href('sports', fin.closest.event)}>{fin.closest.event}</a>: {fin.closest.winner} won by {fin.closest.by} ({sc(fin.closest)})</li>
+            )}
+            {fin.biggest && (
+              <li><span className="moments__tag">Biggest win</span>
+                <a href={href('sports', fin.biggest.event)}>{fin.biggest.event}</a> {stageName(fin.biggest.stage).toLowerCase()}: {fin.biggest.winner} won {sc(fin.biggest)}</li>
+            )}
+          </ul>
+        </>
+      )}
+    </Section>
+  );
+}
+
+function HouseNameLite({ house, ctx }) {
+  return <span className="team"><Crest house={house} houseMap={ctx.houseMap} size={22} /><span className="team__name">{house}</span></span>;
+}
+
+// Junior SCAM, alphabetical (names as given by SCAM, 3 Nov)
+const JUNIOR_SCAM = ['Arya', 'Harsh', 'Kavya', 'Khushi', 'Meet', 'Mudit', 'Rishabh', 'Ruchikar', 'Sanyam', 'Shruti', 'Vasu', 'Vijay'];
+
+function Credits() {
+  return (
+    <section className="credits" aria-labelledby="credits-title">
+      <img src="/brand/scam-logo.png" alt="SCAM" width="72" height="72" loading="lazy" />
+      <h2 id="credits-title">Thank you</h2>
+      <p>Goblet of Fire 2026 was brought to you by the whole <b>SCAM</b> team. Thank you to every house, every player and everyone who came out to cheer.</p>
+      <div className="credits__special">
+        <p className="credits__kicker">A special mention</p>
+        <h3>Junior SCAM</h3>
+        <p>Who literally gave it their all to make this a tournament the campus never forgets.</p>
+        <ul className="credits__names">{JUNIOR_SCAM.map((n) => <li key={n}>{n}</li>)}</ul>
+      </div>
+    </section>
+  );
+}
+
+export default function Home({ data, ctx, now, fin }) {
   const [open, setOpen] = useState(null);
   const recent = recentResults(data, 10);       // newest first
   const rankCount = data.standings.reduce((m, s) => ({ ...m, [s.rank]: (m[s.rank] || 0) + 1 }), {});
 
   return (
     <>
-      <Section title="Current Standings">
+      {fin && <ChampionHero fin={fin} ctx={ctx} data={data} />}
+      <Section title={fin ? 'Final Standings' : 'Current Standings'}>
         <ol className="pennants">
           {data.standings.map((s) => (
             <Pennant key={s.house} s={s} ctx={ctx} tied={rankCount[s.rank] > 1}
@@ -183,15 +327,25 @@ export default function Home({ data, ctx, now }) {
           : <p className="hint center">Tap a banner to see how the points add up.</p>}
       </Section>
 
+      {fin && (
+        <Section title="The points race">
+          <PointsRace data={data} ctx={ctx} />
+        </Section>
+      )}
+
       <Section title="Points table">
         <PointsTable data={data} ctx={ctx} />
       </Section>
+
+      {fin && <Recap data={data} ctx={ctx} fin={fin} />}
 
       <Section title="Latest results">
         {recent.length ? (
           <div className="cards">{recent.map((m) => <MatchCard key={m.id} m={m} ctx={ctx} now={now} rollover={data.meta.rolloverHour} showDay />)}</div>
         ) : <Empty>No results yet — the tournament starts soon!</Empty>}
       </Section>
+
+      {fin && <Credits />}
     </>
   );
 }

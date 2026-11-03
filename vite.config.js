@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -10,6 +12,13 @@ function apiDev() {
     configureServer(server) {
       server.middlewares.use('/api/data', async (req, res) => {
         try {
+          // same as the live site: once public/data/final.json exists, serve the frozen final results
+          const frozen = path.join(server.config.publicDir, 'data', 'final.json');
+          if (fs.existsSync(frozen)) {
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            res.end(fs.readFileSync(frozen, 'utf8'));
+            return;
+          }
           const { loadData, respond } = await server.ssrLoadModule('/server/data.mjs');
           const headers = new Headers();
           if (req.headers['if-none-match']) headers.set('if-none-match', req.headers['if-none-match']);

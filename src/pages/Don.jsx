@@ -1,4 +1,4 @@
-import { Crest, Empty, HouseName, Section, signed } from '../components.jsx';
+import { Crest, Empty, HouseName, Section, donPoints, fmtPts, signed } from '../components.jsx';
 import { fmtDay } from '../lib/time.js';
 import { hostelsOf } from '../lib/brand.js';
 import { href } from '../hooks.js';
@@ -27,7 +27,7 @@ export default function Don({ data, ctx }) {
                 <small className="doncard__hostels">{hostelsOf(d.house).join(' · ')}</small>
               </div>
               {d.valid && (d.place
-                ? <span className="doncard__fx">{signed(d.effect)}</span>
+                ? <span className="doncard__fx">{fmtPts(donPoints(d))}</span>
                 : <span className="pill pill--muted">Pending</span>)}
             </li>
           ))}

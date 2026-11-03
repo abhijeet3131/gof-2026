@@ -1,6 +1,6 @@
 // Tests for the app-side views in src/lib/derive.js.
 import { describe, expect, it } from 'vitest';
-import { derive, orderSemis, withFinalists } from '../src/lib/derive.js';
+import { derive, finale, orderSemis, withFinalists } from '../src/lib/derive.js';
 
 const match = (event, stage, night, sort, teamA = '', teamB = '') => ({ id: `${event}|${stage}`, event, stage, night, sort, teamA, teamB });
 const get = (data, event, stage) => data.matches.find((m) => m.event === event && m.stage === stage);
@@ -103,5 +103,37 @@ describe('withFinalists: semi-final winners get 2nd-place points before the fina
   it('adds nothing once the final has been entered', () => {
     const out = withFinalists(data({ pointsLog: [...log('Football Men', 'Decided'), ...log('Chess', 'Decided')] }));
     expect(out.standings.every((s) => s.total === 0)).toBe(true);
+  });
+});
+
+describe('finale: wrap-up once every sport is decided', () => {
+  const base = (status) => ({
+    brackets: [{ event: 'Football Men', status, champion: 'Gryffindor', runnerUp: 'Ravenclaw' }, { event: 'Basketball Men', status: 'Decided', champion: 'Slytherin', runnerUp: 'Gryffindor' }],
+    standings: [{ house: 'Hufflepuff', rank: 1, total: 2375 }, { house: 'Gryffindor', rank: 2, total: 1200 }],
+    events: [{ name: 'Football Men' }, { name: 'Basketball Men' }],
+    matches: [
+      { event: 'Football Men', stage: 'Final', format: 'Knockout', official: true, type: 'Sport', score: '1-0', winner: 'Gryffindor' },
+      { event: 'Basketball Men', stage: 'Final', format: 'Knockout', official: true, type: 'Sport', score: '24-25', winner: 'Slytherin' },
+      { event: 'Basketball Men', stage: 'Semi 1', format: 'Knockout', official: true, type: 'Sport', score: '38-6', winner: 'Slytherin' },
+    ],
+    don: [], weasley: [],
+  });
+  it('is null while any sport is still running', () => expect(finale(base('In progress'))).toBeNull());
+  it('names the champion, margin, closest final (relative) and biggest win', () => {
+    const f = finale(base('Decided'));
+    expect(f).toMatchObject({ champions: ['Hufflepuff'], lead: 2375, margin: 1175, played: 3, sports: 2 });
+    expect(f.closest).toMatchObject({ event: 'Basketball Men', by: 1 });
+    expect(f.biggest).toMatchObject({ stage: 'Semi 1', by: 32 });
+    expect(f.titles).toEqual({ Gryffindor: ['Football Men'], Slytherin: ['Basketball Men'] });
+  });
+});
+
+describe('isPayload (guards the app against login pages and broken caches)', async () => {
+  const { isPayload } = await import('../src/hooks.js');
+  it('accepts a real payload and rejects anything else', async () => {
+    const demo = (await import('../server/fixtures/demo.json')).default;
+    const { buildPayload } = await import('../server/parse.mjs');
+    expect(isPayload(buildPayload(demo))).toBe(true);
+    for (const bad of [null, {}, { meta: {} }, '<html>', { error: 'x' }]) expect(isPayload(bad)).toBe(false);
   });
 });

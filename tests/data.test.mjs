@@ -109,6 +109,30 @@ describe('Cloudflare Pages Function (functions/api/data.js)', () => {
     expect(res.headers.get('Cache-Control')).toBe('no-store');
     expect(put).not.toHaveBeenCalled();
   });
+
+  it('serves the frozen final results when public/data/final.json exists, without asking Google', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const { onRequestGet } = await fresh('../functions/api/data.js');
+    const frozen = JSON.stringify({ meta: { frozen: true }, standings: [] });
+    const ASSETS = { fetch: async (url) => (String(url).endsWith('/data/final.json')
+      ? new Response(frozen, { headers: { 'content-type': 'application/json', etag: '"abc"' } })
+      : new Response('<html>', { headers: { 'content-type': 'text/html' } })) };
+    const res = await onRequestGet({ request: new Request('https://gof.pages.dev/api/data'), env: { ...ENV, ASSETS }, waitUntil: () => {} });
+    expect(res.headers.get('X-GOF-Source')).toBe('frozen');
+    expect((await res.json()).meta.frozen).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+    const again = await onRequestGet({ request: new Request('https://gof.pages.dev/api/data', { headers: { 'if-none-match': '"abc"' } }), env: { ...ENV, ASSETS }, waitUntil: () => {} });
+    expect(again.status).toBe(304);
+  });
+
+  it('goes back to the live sheet when the frozen file is gone (Pages answers with the HTML page)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => googleResponse());
+    const { onRequestGet } = await fresh('../functions/api/data.js');
+    const ASSETS = { fetch: async () => new Response('<html>', { headers: { 'content-type': 'text/html' } }) };
+    const res = await onRequestGet({ request: new Request('https://gof.pages.dev/api/data'), env: { ...ENV, ASSETS }, waitUntil: () => {} });
+    expect(res.headers.get('X-GOF-Source')).toBeNull();
+    expect((await res.json()).meta.demo).toBe(false);
+  });
 });
 
 describe('optional Netlify wrapper', () => {

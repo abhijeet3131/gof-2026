@@ -1,11 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { derive, liveMatches, orderSemis, withFinalists } from './lib/derive.js';
+import { derive, finale, liveMatches, orderSemis, withFinalists } from './lib/derive.js';
+import Celebration from './Celebration.jsx';
 import { fmtAgo } from './lib/time.js';
 import { href, useNow, useRoute, useTournament } from './hooks.js';
 import Home from './pages/Home.jsx';
 import Schedule from './pages/Schedule.jsx';
 import { SportDetail, SportsList } from './pages/Sports.jsx';
 import Don from './pages/Don.jsx';
+import House from './pages/House.jsx';
 import { hideSplash } from './splash.js';
 
 const NAV = [
@@ -21,6 +23,7 @@ export default function App() {
   const now = useNow(10000);
   const [page = '', param] = useRoute();
   const ctx = useMemo(() => derive(data), [data]);
+  const fin = useMemo(() => finale(data), [data]);      // set once every sport is decided
   const liveCount = data ? liveMatches(data, now).length : 0;
 
   useEffect(() => { if (data || error) hideSplash(); }, [data, error]);
@@ -30,14 +33,16 @@ export default function App() {
     body = error
       ? <div className="state"><p>Couldn't load the tournament data.</p><p className="muted">{error}</p><button className="btn" onClick={refresh}>Try again</button></div>
       : <div className="state"><div className="spinner" aria-label="Loading" /></div>;
-  } else if (page === 'schedule') body = <Schedule data={data} ctx={ctx} now={now} param={param} />;
+  } else if (page === 'schedule') body = <Schedule data={data} ctx={ctx} now={now} param={param} fin={fin} />;
   else if (page === 'sports' && param) body = <SportDetail data={data} ctx={ctx} now={now} name={param} />;
   else if (page === 'sports') body = <SportsList data={data} ctx={ctx} />;
   else if (page === 'don') body = <Don data={data} ctx={ctx} />;
-  else body = <Home data={data} ctx={ctx} now={now} />;
+  else if (page === 'house' && param) body = <House data={data} ctx={ctx} now={now} name={param} />;
+  else body = <Home data={data} ctx={ctx} now={now} fin={fin} />;
 
   return (
     <div className="app">
+      {fin && <Celebration fin={fin} ctx={ctx} />}
       <header className="topbar">
         <a className="brand" href={href()} aria-label="Goblet of Fire 2026 - home">
           <img src="/brand/gof-logo-white.svg" alt="Goblet of Fire" width="416" height="315" />
@@ -55,7 +60,7 @@ export default function App() {
         {data && (
           <button className={`sync ${error ? 'is-error' : ''}`} onClick={refresh} title="Refresh now">
             <span className={`sync__dot ${refreshing ? 'is-spinning' : ''}`} />
-            <span className="sync__label">{error ? 'Offline' : checkedAt ? `Updated ${fmtAgo(new Date(checkedAt).toISOString(), Date.now())}` : 'Updating…'}</span>
+            <span className="sync__label">{data.meta.frozen ? 'Final results' : error ? 'Offline' : checkedAt ? `Updated ${fmtAgo(new Date(checkedAt).toISOString(), Date.now())}` : 'Updating…'}</span>
           </button>
         )}
       </header>

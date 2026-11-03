@@ -144,3 +144,7 @@ export function Empty({ children }) {
 }
 
 export const signed = (n) => (n > 0 ? `+${n}` : `${n}`);
+
+/** Points a house actually scored from its DON sport: 1st = doubled (e.g. 400), 2nd = 0, out = -100. */
+export const donPoints = (d) => d.eventPoints ?? 0;
+export const fmtPts = (n) => `${n < 0 ? '−' : ''}${Math.abs(n)} pts`;

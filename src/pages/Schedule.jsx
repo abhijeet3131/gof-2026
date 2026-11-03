@@ -139,7 +139,7 @@ function readView() {
   try { return localStorage.getItem(VIEW_KEY) === 'grid' ? 'grid' : 'day'; } catch { return 'day'; }
 }
 
-export default function Schedule({ data, ctx, now, param }) {
+export default function Schedule({ data, ctx, now, param, fin }) {
   const { meta } = data;
   const [view, setView] = useState(readView);
   const choose = (v) => {
@@ -149,11 +149,14 @@ export default function Schedule({ data, ctx, now, param }) {
   const today = nightOf(new Date(now), meta.utcOffset, meta.rolloverHour);
   const days = daysBetween(meta.startDate, meta.endDate);
   const clamp = (d) => (d < days[0] ? days[0] : d > days[days.length - 1] ? days[days.length - 1] : d);
-  const selected = param && /^\d{4}-\d{2}-\d{2}$/.test(param) ? param : clamp(today);
+  // once the tournament is over, open on the last night that had matches instead of an empty "today"
+  const lastNight = days.filter((d) => (ctx.matchesByNight[d] || []).some((m) => m.type === 'Sport')).pop();
+  const selected = param && /^\d{4}-\d{2}-\d{2}$/.test(param) ? param : fin && lastNight ? lastNight : clamp(today);
   const list = ctx.matchesByNight[selected] || [];
 
   return (
     <>
+      {fin && <p className="concluded-note">🏁 The tournament has finished. Every result below is final.</p>}
       <div className="viewtoggle" role="tablist" aria-label="Schedule view">
         <button role="tab" aria-selected={view === 'day'} onClick={() => choose('day')}>📅 Day by day</button>
         <button role="tab" aria-selected={view === 'grid'} onClick={() => choose('grid')}>▦ Full schedule</button>
@@ -184,7 +187,7 @@ export default function Schedule({ data, ctx, now, param }) {
           ) : <Empty>Nothing scheduled on this day.</Empty>}
         </>
       )}
-      <p className="schedule-note">{NOTE}</p>
+      {!fin && <p className="schedule-note">{NOTE}</p>}
     </>
   );
 }

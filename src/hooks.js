@@ -4,8 +4,13 @@ import { nowOverride } from './lib/time.js';
 const CACHE_KEY = 'gof2026:data';
 const REFRESH_MS = 30000;
 
+// Only accept something that really is a tournament payload: a Wi-Fi login page or a broken cache
+// must never reach the app (it would crash on the missing lists).
+export const isPayload = (d) => !!d && typeof d === 'object' && !!d.meta
+  && ['matches', 'standings', 'houses', 'events', 'pointsLog', 'brackets'].every((k) => Array.isArray(d[k]));
+
 function readCache() {
-  try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch { return null; }
+  try { const d = JSON.parse(localStorage.getItem(CACHE_KEY)); return isPayload(d) ? d : null; } catch { return null; }
 }
 function writeCache(data) {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch { /* storage unavailable */ }
@@ -28,6 +33,7 @@ export function useTournament() {
       const res = await fetch('/api/data', { cache: 'no-cache' });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json.error) throw new Error(json.error || `Server error ${res.status}`);
+      if (!isPayload(json)) throw new Error('Got an unexpected reply from the server');
       setData(json);
       setCheckedAt(Date.now());
       setError(null);

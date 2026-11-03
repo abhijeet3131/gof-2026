@@ -165,3 +165,45 @@ export function recentResults(data, limit = Infinity) {
 }
 
 export const GENDER_ORDER = ['Men', 'Women', 'Mixed'];
+
+/** Two-number score like "24-25" or "38 - 6" -> [24, 25]; anything else (cricket overs, sets text) -> null. */
+export function parseScore(score) {
+  const m = /^\s*(\d+)\s*[-–:]\s*(\d+)\s*$/.exec(score || '');
+  return m ? [Number(m[1]), Number(m[2])] : null;
+}
+
+/**
+ * Wrap-up facts once every sport is decided (null while the tournament is still running):
+ * champions, medal table, DON and Weasley outcomes, closest final and biggest win.
+ */
+export function finale(data) {
+  if (!data?.brackets?.length || !data.brackets.every((b) => b.status === 'Decided')) return null;
+  const standings = data.standings;
+  const champions = standings.filter((s) => s.rank === 1).map((s) => s.house);
+  const lead = standings[0]?.total ?? 0;
+  const runnerUp = standings.find((s) => s.rank > 1);
+  const titles = {};
+  const silvers = {};
+  for (const b of data.brackets) {
+    if (b.champion) (titles[b.champion] ||= []).push(b.event);
+    if (b.runnerUp) silvers[b.runnerUp] = (silvers[b.runnerUp] || 0) + 1;
+  }
+  const medals = standings.map((s) => ({ house: s.house, rank: s.rank, total: s.total, gold: titles[s.house]?.length || 0, silver: silvers[s.house] || 0 }));
+  const scored = data.matches.filter((m) => m.official && m.type !== 'Event' && m.format === 'Knockout')
+    .map((m) => ({ m, score: parseScore(m.score) })).filter((x) => x.score);
+  const margin = (x) => Math.abs(x.score[0] - x.score[1]);
+  const finals = scored.filter((x) => x.m.stage === 'Final');
+  // closest = smallest margin relative to the score, so 25-24 in basketball beats 1-0 in football
+  const rel = (x) => margin(x) / Math.max(1, ...x.score);
+  const closest = finals.length ? finals.reduce((a, b) => (rel(b) < rel(a) ? b : a)) : null;
+  const biggest = scored.length ? scored.reduce((a, b) => (margin(b) > margin(a) ? b : a)) : null;
+  return {
+    champions, lead, margin: runnerUp ? lead - runnerUp.total : 0, titles, medals,
+    played: data.matches.filter((m) => m.official && m.type !== 'Event').length,
+    sports: data.events.length,
+    don: data.don.filter((d) => d.valid && d.event),
+    weasley: data.weasley.filter((w) => w.result !== 'Pending'),
+    closest: closest && { ...closest.m, by: margin(closest) },
+    biggest: biggest && { ...biggest.m, by: margin(biggest) },
+  };
+}

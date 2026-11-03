@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crest, Empty, HouseName, MatchCard, Section, signed } from '../components.jsx';
+import { Crest, Empty, HouseName, MatchCard, Section, donPoints, fmtPts, signed } from '../components.jsx';
 import { GENDER_ORDER, textOn } from '../lib/derive.js';
 import { fmtDay, fmtTime, isAfterMidnight } from '../lib/time.js';
 import { href } from '../hooks.js';
@@ -124,7 +124,7 @@ export function SportDetail({ data, ctx, now, name }) {
         <Section title="On the line">
           <ul className="stakes">
             {dons.map((d) => (
-              <li key={d.house}><HouseName house={d.house} houseMap={ctx.houseMap} /> <span>Double or Nothing</span>{d.place && <b className={d.effect < 0 ? 'neg' : ''}>{signed(d.effect)}</b>}</li>
+              <li key={d.house}><HouseName house={d.house} houseMap={ctx.houseMap} /> <span>Double or Nothing</span>{d.place && <b className={donPoints(d) < 0 ? 'neg' : ''}>{fmtPts(donPoints(d))}</b>}</li>
             ))}
             {weasley.map((w) => (
               <li key={w.challenger}><HouseName house={w.challenger} houseMap={ctx.houseMap} /> <span>Weasley vs {w.challenged}</span>{w.result !== 'Pending' && <b className={w.points < 0 ? 'neg' : ''}>{signed(w.points)}</b>}</li>
